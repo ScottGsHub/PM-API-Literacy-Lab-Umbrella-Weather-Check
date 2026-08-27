@@ -346,4 +346,9 @@ The workflow is intended to teach API contracts, orchestration, mapping, branchi
 
 ## License
 
-Add the license appropriate for how you want others to reuse the workflow and accompanying material. If no license is included, normal copyright rules apply.
+MIT License
+
+Copyright (c) 2026 Scott Germaise
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files...
