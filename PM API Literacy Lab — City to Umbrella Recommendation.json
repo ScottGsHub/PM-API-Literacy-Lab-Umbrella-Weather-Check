@@ -1,0 +1,1328 @@
+{
+  "name": "PM API Literacy Lab — City to Umbrella Recommendation",
+  "nodes": [
+    {
+      "parameters": {
+        "content": "# Product Leader API / Workflow Literacy Lab\n\n**Scenario:** Should I carry an umbrella tomorrow?\n\nThis workflow uses the same Open-Meteo geocoding + forecast contract as the companion Postman exercise.\n\n### What to notice\n1. A human input (`Stamford`) is not what the weather API needs.\n2. One API translates the city into latitude/longitude.\n3. Those values become inputs to a second API.\n4. The workflow selects **tomorrow** from daily arrays.\n5. A product rule turns data into a recommendation.\n6. Error paths are part of the product behavior, not an afterthought.\n\n### Output boundary\nFor the **manual learning path**, the result simply appears in n8n node output.  \nThe optional **webhook path** returns the same JSON to Postman only to demonstrate that n8n can expose a callable interface.\n\nThis lab intentionally does **not** build a webpage, dashboard, mobile notification, device action, or AI handoff. In real products, one of those downstream destinations is often the whole point of the workflow.\n\n**No paid external API or subscription credential is required by this workflow.** Open-Meteo's public endpoints are used without an API key for this learning exercise.",
+        "height": 552,
+        "width": 1050,
+        "color": 5
+      },
+      "id": "c64d2cac-ecf9-44d4-8783-4c4403e68dcd",
+      "name": "README — What This Workflow Teaches",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 1. Two ways to start the same workflow\n\n**Manual Trigger** is best while learning. It supplies `Stamford` so you can click **Execute workflow** and inspect every node.\n\n**Webhook Trigger** is the optional callable version. From Postman, send:\n\n`GET <test-or-production-webhook-url>?city=Stamford`\n\nClick on the Webhook Trigger to find the URL, then go to Postman to enter it. Execute the workflow and then call it from Postman with HTTP. Remember to add a city parameter to the end of the URL.\n\nBoth entry paths converge on the same product logic. That is deliberate: one canonical workflow, not three drifting copies.",
+        "height": 346,
+        "width": 680,
+        "color": 3
+      },
+      "id": "78e1a21e-df41-4074-a3cd-988a673e5d12",
+      "name": "1 — Two Ways to Start",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        624
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 2. Human place name → machine coordinates\n\nThe user thinks in **city names**. The forecast API needs **latitude + longitude**.\n\nThe first HTTP Request calls Open-Meteo geocoding:\n\n- `name = city`\n- `count = 1`\n- `language = en`\n- `format = json`\n\n**PM exercise:** change the city to `Springfield` and temporarily change `count` to `5`. Multiple valid matches immediately create a product decision about disambiguation.",
+        "height": 330,
+        "width": 920,
+        "color": 7
+      },
+      "id": "5027ba79-c97a-43b8-aa8d-95d6752d782e",
+      "name": "2 — Geocoding Is an Interface Translation",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1152,
+        480
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 3. One interface contract feeds another\n\nThe geocoding response contains latitude and longitude.  \nThe workflow extracts those values and maps them into the forecast request.\n\nThe forecast call intentionally matches the Postman article:\n\n**Current**\n- `temperature_2m`\n- `apparent_temperature`\n- `precipitation`\n\n**Daily**\n- `temperature_2m_max`\n- `temperature_2m_min`\n- `precipitation_probability_max`\n\n`timezone=auto`\n\nThis is the central architectural lesson: **the output contract of one interface becomes the input contract of another.**",
+        "height": 360,
+        "width": 980,
+        "color": 7
+      },
+      "id": "39c7d155-a52e-47ff-bf35-16b0d4a7a7c4",
+      "name": "3 — One API Output Becomes Another API Input",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2272,
+        480
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 4. Data becomes a product decision\n\nOpen-Meteo returns daily values as parallel arrays. Index `0` is today; this lab selects index `1` for **tomorrow**.\n\nThen an IF node applies the intentionally simple rule:\n\n**If tomorrow's maximum precipitation probability > 60%, recommend bringing an umbrella.**\n\nThe IF node is implementation.  \n**The 60% threshold is a product decision.**\n\nTry changing it to 40% or 80% and observe how product behavior changes without changing either external API.",
+        "height": 360,
+        "width": 950,
+        "color": 7
+      },
+      "id": "86e5b6d7-5980-4794-958b-8ea12fc6310d",
+      "name": "4 — Product Logic Lives Between Systems",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        3376,
+        480
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 5. Break the happy path\n\nThis workflow handles several failure modes:\n\n- blank city input\n- city returns no usable location\n- geocoding HTTP request fails\n- forecast HTTP request fails\n- forecast response lacks tomorrow's required data\n\nNotice that technical failures are converted into a small, readable JSON result with an `error_code`, `message`, and suggested HTTP status.\n\nIn production you would also decide:\n- what the user sees\n- what gets logged\n- whether/when to retry\n- whether to offer alternate location matches\n- whether to fall back to another provider",
+        "height": 428,
+        "width": 1180,
+        "color": 4
+      },
+      "id": "dcfbf152-3c19-44f4-9ed5-c9631f350381",
+      "name": "5 — Failure Paths Are Product Paths",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        2048,
+        1600
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 6. This lab stops at the workflow boundary\n\n**Manual run:** click **Manual Result - Inspect Output** and read the JSON.\n\n**Webhook run:** the same JSON is returned to Postman.\n\nWe are **not** building a user-facing display or sending the result onward.\n\nA real product might next:\n- render it in a web/mobile UI\n- send a notification\n- trigger another workflow or device\n- store it\n- pass context to an AI/model\n- combine it with other data\n\nThose are common purposes of orchestration, but they are intentionally out of scope so the interface mechanics remain visible.",
+        "height": 390,
+        "width": 920,
+        "color": 5
+      },
+      "id": "12c7cfff-104b-41e6-8c28-efbccf34189e",
+      "name": "6 — Where the Result Goes",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        4352,
+        592
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "0f58fc53-ad72-4a45-a756-b1682fe05fd5",
+      "name": "Manual Trigger — Learning Mode",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        64,
+        1040
+      ],
+      "notesInFlow": true,
+      "notes": "Click Execute workflow to run the learning path. The next node supplies Stamford as the default city."
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "793e0c49-0798-4ea1-9f91-7921273982d2",
+              "name": "city",
+              "value": "Stamford",
+              "type": "string"
+            },
+            {
+              "id": "2f29ded0-3aac-4d35-b3eb-b6c33dfab2e6",
+              "name": "input_source",
+              "value": "manual",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "1c188bb6-545f-446f-915d-530a974bf17c",
+      "name": "Manual Input — Stamford",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        320,
+        1040
+      ],
+      "notesInFlow": true,
+      "notes": "Edit this city to test another place. The manual path is designed so the whole workflow can be explored without any external caller."
+    },
+    {
+      "parameters": {
+        "path": "product-literacy-weather",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "6632e33d-496a-482b-8077-ca3aafb9333a",
+      "name": "Webhook Trigger — Optional Postman Caller",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        64,
+        1248
+      ],
+      "webhookId": "fd8e6485-8a68-4868-ac1c-73a55a25795a",
+      "notesInFlow": true,
+      "notes": "Optional callable path. In Postman use the Test URL while developing, with ?city=Stamford. Publish/activate the workflow before using the Production URL."
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "58ee3850-914a-4e40-a09a-dc34fcbbe897",
+              "name": "city",
+              "value": "={{ String($json.query?.city || '').trim() }}",
+              "type": "string"
+            },
+            {
+              "id": "b95575b1-b92e-41d6-b9ba-4d862c4eca1e",
+              "name": "input_source",
+              "value": "webhook",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "30c7d34c-7f32-4b95-99d9-4efa354420a6",
+      "name": "Webhook Input — Read city Query Param",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        320,
+        1248
+      ],
+      "notesInFlow": true,
+      "notes": "Normalizes the external request into the same two fields used by the manual path: city and input_source."
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "0e726c05-4cc9-4318-ad0e-54a51940d90c",
+              "leftValue": "={{ Boolean($json.city && $json.city.trim().length > 0) }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "bd6baf14-9b78-43d2-be96-7f74dd39d2e8",
+      "name": "City Provided?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        592,
+        1136
+      ],
+      "notesInFlow": true,
+      "notes": "Product validation before calling an external dependency. Blank input should fail locally instead of wasting an API call."
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "063c6f7b-168d-46e9-9962-2dd496ccfca9",
+              "name": "ok",
+              "value": false,
+              "type": "boolean"
+            },
+            {
+              "id": "7ecd5814-0515-47ad-ab26-5f37cad01f71",
+              "name": "input_source",
+              "value": "={{ $json.input_source }}",
+              "type": "string"
+            },
+            {
+              "id": "6379aadd-ac03-4902-a6a2-7b571f5259a5",
+              "name": "city_requested",
+              "value": "={{ $json.city || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "5fd455b4-81d3-4962-9171-7f3544f59dd9",
+              "name": "error_code",
+              "value": "CITY_REQUIRED",
+              "type": "string"
+            },
+            {
+              "id": "92bd6ee0-4628-42aa-b3c9-502a7a1abddd",
+              "name": "message",
+              "value": "Provide a city name, for example Stamford.",
+              "type": "string"
+            },
+            {
+              "id": "8d0e38d4-d934-4845-83f1-fdb2de5d7ce5",
+              "name": "http_status",
+              "value": 400,
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "e21d65c1-a13c-4a9a-8a6e-c0fe66055a8a",
+      "name": "Build Error — City Required",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1104,
+        1568
+      ],
+      "notesInFlow": true,
+      "notes": "A product-friendly validation result. The technical workflow does not need to throw an exception for a missing user input."
+    },
+    {
+      "parameters": {
+        "url": "https://geocoding-api.open-meteo.com/v1/search",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "name",
+              "value": "={{ $json.city }}"
+            },
+            {
+              "name": "count",
+              "value": "1"
+            },
+            {
+              "name": "language",
+              "value": "en"
+            },
+            {
+              "name": "format",
+              "value": "json"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "c3adad10-3089-4594-91de-179ba38d1d04",
+      "name": "HTTP — Geocode City",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        992,
+        976
+      ],
+      "notesInFlow": true,
+      "onError": "continueErrorOutput",
+      "notes": "First real API call. It translates the human city string into structured location data. Error output is enabled so an upstream provider failure becomes an explicit workflow branch."
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "cc49c3b9-d42a-4e9d-b6fd-3479935feb4a",
+              "leftValue": "={{ Boolean($json.results?.[0] && $json.results[0].latitude != null && $json.results[0].longitude != null) }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "4e12ebf0-543a-47af-91b6-21d3c9f44c88",
+      "name": "Usable Location Found?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1440,
+        960
+      ],
+      "notesInFlow": true,
+      "notes": "A 200 response does not guarantee a useful business result. This checks whether the response actually contains coordinates."
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "64014666-70e8-4d72-8cef-2e8c61858c7f",
+              "name": "city",
+              "value": "={{ $('City Provided?').first().json.city }}",
+              "type": "string"
+            },
+            {
+              "id": "3e80d8d7-0029-4fc8-be8a-715b1e641d94",
+              "name": "input_source",
+              "value": "={{ $('City Provided?').first().json.input_source }}",
+              "type": "string"
+            },
+            {
+              "id": "f28c37a2-9aad-409b-adfb-a32940e0f9fe",
+              "name": "latitude",
+              "value": "={{ $json.results[0].latitude }}",
+              "type": "number"
+            },
+            {
+              "id": "714f1adc-b8e7-4b52-bd57-ee66eac4b4d3",
+              "name": "longitude",
+              "value": "={{ $json.results[0].longitude }}",
+              "type": "number"
+            },
+            {
+              "id": "1d32f1c9-c585-402e-b739-5597d8e407a0",
+              "name": "resolved_name",
+              "value": "={{ $json.results[0].name || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "c32b1f5c-1ed3-4d3a-bb66-a40aa3ca45f2",
+              "name": "admin1",
+              "value": "={{ $json.results[0].admin1 || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "d8635de8-ceeb-48b2-9058-b60e19151ab1",
+              "name": "country",
+              "value": "={{ $json.results[0].country || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "d201150b-8f01-4dd4-b0a7-7d0145806776",
+              "name": "timezone",
+              "value": "={{ $json.results[0].timezone || '' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "48e28d62-1e39-40a9-8656-407f8a127c2b",
+      "name": "Extract Coordinates + Location Context",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1888,
+        912
+      ],
+      "notesInFlow": true,
+      "notes": "This is the data-mapping step. We keep only the fields the next interface or product output actually needs."
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "3f3b5a2b-e681-4af8-8e51-fa1fb46c55c2",
+              "name": "ok",
+              "value": false,
+              "type": "boolean"
+            },
+            {
+              "id": "cc1207d5-3244-443e-93db-ebfcac11be5c",
+              "name": "input_source",
+              "value": "={{ $('City Provided?').first().json.input_source }}",
+              "type": "string"
+            },
+            {
+              "id": "3915cf76-efb2-497a-bb9d-a61ffe137301",
+              "name": "city_requested",
+              "value": "={{ $('City Provided?').first().json.city }}",
+              "type": "string"
+            },
+            {
+              "id": "4621966e-e448-4d31-bd34-27cad623ffbb",
+              "name": "error_code",
+              "value": "LOCATION_NOT_FOUND",
+              "type": "string"
+            },
+            {
+              "id": "4e35dbdd-bba2-4720-b9fd-4d99482cdc58",
+              "name": "message",
+              "value": "The location service did not return a usable match.",
+              "type": "string"
+            },
+            {
+              "id": "ba313886-ea49-400a-83ed-7844c4e0f4fe",
+              "name": "http_status",
+              "value": 404,
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "29132245-bca6-471a-a475-d0dccfdfc07b",
+      "name": "Build Error — Location Not Found",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1776,
+        1296
+      ],
+      "notesInFlow": true,
+      "notes": "A technically successful API call can still fail to satisfy the product need. This is a business/UX error path, not an HTTP transport error."
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "b4345f3d-4f9d-4541-8e79-b89b2ab4ffa3",
+              "name": "ok",
+              "value": false,
+              "type": "boolean"
+            },
+            {
+              "id": "7b736280-35d5-4b40-b8a1-728f065dc20f",
+              "name": "input_source",
+              "value": "={{ $('City Provided?').first().json.input_source }}",
+              "type": "string"
+            },
+            {
+              "id": "295f6af0-fc77-4890-954a-263b75fd3f9e",
+              "name": "city_requested",
+              "value": "={{ $('City Provided?').first().json.city }}",
+              "type": "string"
+            },
+            {
+              "id": "36de8ad9-8bdc-4dcd-9d98-93d38db87308",
+              "name": "error_code",
+              "value": "GEOCODING_SERVICE_ERROR",
+              "type": "string"
+            },
+            {
+              "id": "72bdd087-4daa-41d9-a7c4-20d5bb6dc88e",
+              "name": "message",
+              "value": "={{ $json.error?.message || $json.message || 'The geocoding service request failed.' }}",
+              "type": "string"
+            },
+            {
+              "id": "c85c903c-5a61-43ed-aa5d-9a39be132319",
+              "name": "http_status",
+              "value": 502,
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "524b1c8f-46ee-4868-a105-8bc74f657e23",
+      "name": "Build Error — Geocoding Service",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1344,
+        1424
+      ],
+      "notesInFlow": true,
+      "notes": "Transport/provider failure path from the HTTP Request node's error output. In a real product you might retry, fail over, or alert operations."
+    },
+    {
+      "parameters": {
+        "url": "https://api.open-meteo.com/v1/forecast",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "latitude",
+              "value": "={{ $json.latitude }}"
+            },
+            {
+              "name": "longitude",
+              "value": "={{ $json.longitude }}"
+            },
+            {
+              "name": "current",
+              "value": "temperature_2m,apparent_temperature,precipitation"
+            },
+            {
+              "name": "daily",
+              "value": "temperature_2m_max,temperature_2m_min,precipitation_probability_max"
+            },
+            {
+              "name": "timezone",
+              "value": "auto"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 10000
+        }
+      },
+      "id": "ba23e57a-631d-4266-a757-cb2dc4622155",
+      "name": "HTTP — Get Forecast",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2352,
+        912
+      ],
+      "notesInFlow": true,
+      "onError": "continueErrorOutput",
+      "notes": "Second real API call. Its latitude/longitude inputs came from the first API. The requested fields intentionally match the Postman article."
+    },
+    {
+      "parameters": {
+        "jsCode": "const forecast = $input.first().json;\nconst location = $('Extract Coordinates + Location Context').first().json;\n\nconst daily = forecast.daily || {};\nconst current = forecast.current || {};\nconst currentUnits = forecast.current_units || {};\nconst dailyUnits = forecast.daily_units || {};\n\nconst index = 1; // Open-Meteo daily arrays: 0=today, 1=tomorrow.\nconst tomorrowDate = daily.time?.[index] ?? null;\nconst precipitationProbability = daily.precipitation_probability_max?.[index] ?? null;\nconst tempMax = daily.temperature_2m_max?.[index] ?? null;\nconst tempMin = daily.temperature_2m_min?.[index] ?? null;\n\nconst forecastOk =\n  tomorrowDate !== null &&\n  precipitationProbability !== null &&\n  precipitationProbability !== undefined;\n\nreturn [{\n  json: {\n    input_source: location.input_source,\n    city_requested: location.city,\n    resolved_location: [location.resolved_name, location.admin1, location.country]\n      .filter(Boolean)\n      .join(', '),\n    latitude: location.latitude,\n    longitude: location.longitude,\n    timezone: forecast.timezone || location.timezone || null,\n\n    current_temperature: current.temperature_2m ?? null,\n    current_temperature_unit: currentUnits.temperature_2m ?? null,\n    current_apparent_temperature: current.apparent_temperature ?? null,\n    current_apparent_temperature_unit: currentUnits.apparent_temperature ?? null,\n    current_precipitation: current.precipitation ?? null,\n    current_precipitation_unit: currentUnits.precipitation ?? null,\n\n    tomorrow_date: tomorrowDate,\n    tomorrow_temperature_max: tempMax,\n    tomorrow_temperature_max_unit: dailyUnits.temperature_2m_max ?? null,\n    tomorrow_temperature_min: tempMin,\n    tomorrow_temperature_min_unit: dailyUnits.temperature_2m_min ?? null,\n    tomorrow_precipitation_probability_max: precipitationProbability,\n    tomorrow_precipitation_probability_unit: dailyUnits.precipitation_probability_max ?? '%',\n\n    forecast_ok: forecastOk\n  }\n}];"
+      },
+      "id": "525d2457-5ed2-4d1a-82a1-2f79798e5fc1",
+      "name": "Code — Select Tomorrow + Shape Product Data",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2688,
+        896
+      ],
+      "notesInFlow": true,
+      "notes": "Open-Meteo daily values arrive as parallel arrays. This node intentionally makes the hidden indexing step visible and shapes the large provider payload into product-friendly fields."
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "660ded33-31b0-4839-a674-97affd6f748b",
+              "name": "ok",
+              "value": false,
+              "type": "boolean"
+            },
+            {
+              "id": "8ab55604-efde-48a8-9de9-88986213ed60",
+              "name": "input_source",
+              "value": "={{ $('Extract Coordinates + Location Context').first().json.input_source }}",
+              "type": "string"
+            },
+            {
+              "id": "8884cb3b-b700-492e-b803-a6cd9ebcea83",
+              "name": "city_requested",
+              "value": "={{ $('Extract Coordinates + Location Context').first().json.city }}",
+              "type": "string"
+            },
+            {
+              "id": "be7ed53b-f38b-4b5c-8784-67b4cee2328c",
+              "name": "error_code",
+              "value": "FORECAST_SERVICE_ERROR",
+              "type": "string"
+            },
+            {
+              "id": "adf31175-f431-4776-ada9-fc3823deeed3",
+              "name": "message",
+              "value": "={{ $json.error?.message || $json.message || 'The forecast service request failed.' }}",
+              "type": "string"
+            },
+            {
+              "id": "00ec0f33-3936-4b88-9b88-a5813e0b218b",
+              "name": "http_status",
+              "value": 502,
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "424a09a0-1307-45ae-80fd-ce23ef24378c",
+      "name": "Build Error — Forecast Service",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2544,
+        1152
+      ],
+      "notesInFlow": true,
+      "notes": "Transport/provider failure path for the second external dependency."
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "74c65867-82d3-4834-8f94-90efc4c6ed9e",
+              "leftValue": "={{ $json.forecast_ok }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "dfc7ef41-ad09-4791-9098-cd310aac8268",
+      "name": "Tomorrow Forecast Available?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        3024,
+        896
+      ],
+      "notesInFlow": true,
+      "notes": "Separates 'the API responded' from 'the API returned the data the product rule needs.'"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "37cff810-7444-426a-be01-4c0e717c0249",
+              "name": "ok",
+              "value": false,
+              "type": "boolean"
+            },
+            {
+              "id": "217a981b-03e2-494a-bae4-3392fddcb4b4",
+              "name": "input_source",
+              "value": "={{ $json.input_source }}",
+              "type": "string"
+            },
+            {
+              "id": "2008e6bf-a80e-4738-9ce1-676b162ebfd8",
+              "name": "city_requested",
+              "value": "={{ $json.city_requested }}",
+              "type": "string"
+            },
+            {
+              "id": "adfefa17-18fe-4b82-a8fa-c60c5670274d",
+              "name": "error_code",
+              "value": "TOMORROW_FORECAST_MISSING",
+              "type": "string"
+            },
+            {
+              "id": "408da359-670c-40db-9f64-9090847dd808",
+              "name": "message",
+              "value": "The forecast response did not contain tomorrow's precipitation probability.",
+              "type": "string"
+            },
+            {
+              "id": "32c3653e-4301-434f-85c5-429ad22109ec",
+              "name": "http_status",
+              "value": 502,
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a9714c7c-4101-4256-bee7-ac833f622365",
+      "name": "Build Error — Tomorrow Data Missing",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3184,
+        1056
+      ],
+      "notesInFlow": true,
+      "notes": "An example of a semantically incomplete response. The provider call worked, but the expected product data was missing."
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "0d9e92cd-05a5-4d6e-887a-aed9ffe5d83a",
+              "leftValue": "={{ Number($json.tomorrow_precipitation_probability_max) }}",
+              "rightValue": 60,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "025d73df-10a7-49ae-a1d4-e1ac72261219",
+      "name": "IF — Rain Probability > 60%?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        3376,
+        880
+      ],
+      "notesInFlow": true,
+      "notes": "This is the product rule. Change 60 to another threshold and the behavior changes without changing either API integration."
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "3121ce34-fe83-40a1-b4a5-54f24ad0a57d",
+              "name": "ok",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "3d50d69c-49b4-45ac-a4a1-81580b55a79e",
+              "name": "input_source",
+              "value": "={{ $json.input_source }}",
+              "type": "string"
+            },
+            {
+              "id": "4a9407ae-0dcc-415b-b154-c86af7c7f6b1",
+              "name": "city_requested",
+              "value": "={{ $json.city_requested }}",
+              "type": "string"
+            },
+            {
+              "id": "cb1d6e9e-f626-424e-89a5-c086d19e270b",
+              "name": "resolved_location",
+              "value": "={{ $json.resolved_location }}",
+              "type": "string"
+            },
+            {
+              "id": "4b0974ea-f711-4771-afb2-3807adc4c874",
+              "name": "tomorrow_date",
+              "value": "={{ $json.tomorrow_date }}",
+              "type": "string"
+            },
+            {
+              "id": "a5719407-57fa-42ee-9662-61ab24fcf8b5",
+              "name": "precipitation_probability_max",
+              "value": "={{ $json.tomorrow_precipitation_probability_max }}",
+              "type": "number"
+            },
+            {
+              "id": "43c77def-583c-4b02-bbaa-8a30e0f11cda",
+              "name": "temperature_max",
+              "value": "={{ $json.tomorrow_temperature_max }}",
+              "type": "number"
+            },
+            {
+              "id": "ace62756-9d69-4f0c-914d-13bb5775a88c",
+              "name": "temperature_min",
+              "value": "={{ $json.tomorrow_temperature_min }}",
+              "type": "number"
+            },
+            {
+              "id": "a833066c-28ec-41ad-8a52-e30c312ce564",
+              "name": "temperature_unit",
+              "value": "={{ $json.tomorrow_temperature_max_unit }}",
+              "type": "string"
+            },
+            {
+              "id": "77d8503b-fe54-4f6b-8e0b-dd4d6f3f2087",
+              "name": "recommendation",
+              "value": "Bring an umbrella",
+              "type": "string"
+            },
+            {
+              "id": "f1232016-6ebc-46d3-915e-504a265b24b8",
+              "name": "decision_rule",
+              "value": "Bring umbrella when tomorrow's maximum precipitation probability is greater than 60%.",
+              "type": "string"
+            },
+            {
+              "id": "462e4146-203c-4a99-9809-81619dadf5e0",
+              "name": "http_status",
+              "value": 200,
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "596803a6-7964-403e-8d3b-299245eb6a10",
+      "name": "Build Result — Bring an Umbrella",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3712,
+        864
+      ],
+      "notesInFlow": true,
+      "notes": "True branch. Raw provider data has become a small product-level outcome."
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "bbba8ac9-29b7-4d1b-822a-1960afcd107c",
+              "name": "ok",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "42b8793e-e110-42c2-a9eb-cc69294d70ef",
+              "name": "input_source",
+              "value": "={{ $json.input_source }}",
+              "type": "string"
+            },
+            {
+              "id": "4a04cf25-d5c7-4bfd-ab96-051da25437be",
+              "name": "city_requested",
+              "value": "={{ $json.city_requested }}",
+              "type": "string"
+            },
+            {
+              "id": "68c910e8-7731-4ffb-80d8-7be3ebb8ab39",
+              "name": "resolved_location",
+              "value": "={{ $json.resolved_location }}",
+              "type": "string"
+            },
+            {
+              "id": "f576d34a-205f-4f0f-b84d-2077d1eeed22",
+              "name": "tomorrow_date",
+              "value": "={{ $json.tomorrow_date }}",
+              "type": "string"
+            },
+            {
+              "id": "9681b269-a5ae-47ac-b44b-8df1cc06e20c",
+              "name": "precipitation_probability_max",
+              "value": "={{ $json.tomorrow_precipitation_probability_max }}",
+              "type": "number"
+            },
+            {
+              "id": "a4832bc5-ed24-4dad-b94e-167fad7cb904",
+              "name": "temperature_max",
+              "value": "={{ $json.tomorrow_temperature_max }}",
+              "type": "number"
+            },
+            {
+              "id": "8ff672b3-c8c5-48c0-b51f-c05fd38b72b2",
+              "name": "temperature_min",
+              "value": "={{ $json.tomorrow_temperature_min }}",
+              "type": "number"
+            },
+            {
+              "id": "bc0095e4-c796-4b7e-aa86-38dff629cebe",
+              "name": "temperature_unit",
+              "value": "={{ $json.tomorrow_temperature_max_unit }}",
+              "type": "string"
+            },
+            {
+              "id": "18c41c46-f002-4a1f-aae4-3ca48c26a6bc",
+              "name": "recommendation",
+              "value": "Probably fine without one",
+              "type": "string"
+            },
+            {
+              "id": "18fbe95c-2e2c-41a6-ba26-e9b886c17328",
+              "name": "decision_rule",
+              "value": "Bring umbrella when tomorrow's maximum precipitation probability is greater than 60%.",
+              "type": "string"
+            },
+            {
+              "id": "677a1c4d-0f5a-425f-93f8-5bc06d14430d",
+              "name": "http_status",
+              "value": 200,
+              "type": "number"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "12491765-2925-480c-8681-02796cd08875",
+      "name": "Build Result — Probably Fine",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3552,
+        1008
+      ],
+      "notesInFlow": true,
+      "notes": "False branch. The same data contract reaches a different product outcome because of the threshold."
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "9b99568b-c3db-44d2-ac9f-de2e8478d24f",
+              "leftValue": "={{ $json.input_source }}",
+              "rightValue": "webhook",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "8871d597-a144-40f7-8218-6877298c0b70",
+      "name": "Was This Called by Webhook?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        4080,
+        1264
+      ],
+      "notesInFlow": true,
+      "notes": "Routes the same result according to how the workflow started. Manual runs stay visible in n8n; webhook runs return JSON to the caller."
+    },
+    {
+      "parameters": {},
+      "id": "e2d078a9-993b-4d42-b1d0-90a16613c645",
+      "name": "Manual Result — Inspect Output",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        4352,
+        1264
+      ],
+      "notesInFlow": true,
+      "notes": "For the learning path, stop here and inspect this node's JSON output. No webpage, dashboard, device, notification, or AI integration is built."
+    },
+    {
+      "parameters": {
+        "options": {
+          "responseCode": "={{ $json.http_status || 200 }}"
+        }
+      },
+      "id": "ab179116-6643-469e-ab5b-c906c1c825d7",
+      "name": "Respond to Webhook — Return JSON to Postman",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        4352,
+        1056
+      ],
+      "notesInFlow": true,
+      "notes": "Optional callable path only. This returns the same JSON to Postman; it is not a user-facing product UI."
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Manual Trigger — Learning Mode": {
+      "main": [
+        [
+          {
+            "node": "Manual Input — Stamford",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual Input — Stamford": {
+      "main": [
+        [
+          {
+            "node": "City Provided?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook Trigger — Optional Postman Caller": {
+      "main": [
+        [
+          {
+            "node": "Webhook Input — Read city Query Param",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook Input — Read city Query Param": {
+      "main": [
+        [
+          {
+            "node": "City Provided?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "City Provided?": {
+      "main": [
+        [
+          {
+            "node": "HTTP — Geocode City",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Error — City Required",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP — Geocode City": {
+      "main": [
+        [
+          {
+            "node": "Usable Location Found?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Error — Geocoding Service",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Usable Location Found?": {
+      "main": [
+        [
+          {
+            "node": "Extract Coordinates + Location Context",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Error — Location Not Found",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Coordinates + Location Context": {
+      "main": [
+        [
+          {
+            "node": "HTTP — Get Forecast",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP — Get Forecast": {
+      "main": [
+        [
+          {
+            "node": "Code — Select Tomorrow + Shape Product Data",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Error — Forecast Service",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code — Select Tomorrow + Shape Product Data": {
+      "main": [
+        [
+          {
+            "node": "Tomorrow Forecast Available?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tomorrow Forecast Available?": {
+      "main": [
+        [
+          {
+            "node": "IF — Rain Probability > 60%?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Error — Tomorrow Data Missing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF — Rain Probability > 60%?": {
+      "main": [
+        [
+          {
+            "node": "Build Result — Bring an Umbrella",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Result — Probably Fine",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Error — City Required": {
+      "main": [
+        [
+          {
+            "node": "Was This Called by Webhook?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Error — Geocoding Service": {
+      "main": [
+        [
+          {
+            "node": "Was This Called by Webhook?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Error — Location Not Found": {
+      "main": [
+        [
+          {
+            "node": "Was This Called by Webhook?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Error — Forecast Service": {
+      "main": [
+        [
+          {
+            "node": "Was This Called by Webhook?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Error — Tomorrow Data Missing": {
+      "main": [
+        [
+          {
+            "node": "Was This Called by Webhook?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Result — Bring an Umbrella": {
+      "main": [
+        [
+          {
+            "node": "Was This Called by Webhook?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Result — Probably Fine": {
+      "main": [
+        [
+          {
+            "node": "Was This Called by Webhook?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Was This Called by Webhook?": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook — Return JSON to Postman",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Manual Result — Inspect Output",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner",
+    "executionTimeout": -1,
+    "availableInMCP": false
+  },
+  "versionId": "e57ef027-e374-4ec0-990d-68365c597296",
+  "meta": {
+    "instanceId": "dad38bf53165f930f2a7c49a7f4111ceee6e2097a34590067ccf2fc839836e49"
+  },
+  "id": "cLEjWH0eG7o07LiQ",
+  "tags": []
+}
